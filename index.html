@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat con Gemini - Innova Protec</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      background-color: #f7f9fc;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background-color: #ffffff;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #333;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+    }
+
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      background-color: white;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+    }
+
+    .mensaje {
+      margin-bottom: 1rem;
+    }
+
+    .usuario {
+      color: #0b8043;
+      font-weight: bold;
+    }
+
+    .gemini {
+      color: #1a73e8;
+    }
+
+    .sistema {
+      color: #fbbc05;
+      font-style: italic;
+    }
+
+    #entrada {
+      display: flex;
+      margin-top: 1rem;
+    }
+
+    #inputMensaje {
+      flex: 1;
+      padding: 0.7rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-right: 0.5rem;
+    }
+
+    #btnEnviar {
+      padding: 0.7rem 1.2rem;
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #btnEnviar:hover {
+      background-color: #1669c1;
+    }
+  </style>
+</head>
+<body>
+
+<header>💬 MI PRIMERA IA - Chat con Gemini</header>
+
+<main>
+  <div id="chat">
+    <div class="mensaje sistema">💡 Escribe tu consulta y presiona 'Enviar'.</div>
+  </div>
+
+  <div id="entrada">
+    <input type="text" id="inputMensaje" placeholder="Escribe tu mensaje..." />
+    <button id="btnEnviar">Enviar</button>
+  </div>
+</main>
+
+<script>
+  const API_KEY = "AIzaSyCQKQP39mGp-uRBKWqhYoUODJ1HO6bTSQw"; // ⚠️ NO expongas esto en producción
+  const URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+
+  const chat = document.getElementById('chat');
+  const input = document.getElementById('inputMensaje');
+  const btn = document.getElementById('btnEnviar');
+
+  function agregarMensaje(texto, clase) {
+    const div = document.createElement('div');
+    div.className = `mensaje ${clase}`;
+    div.textContent = texto;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  async function enviarMensaje() {
+    const pregunta = input.value.trim();
+    if (!pregunta) return;
+
+    agregarMensaje("🧑 Tú: " + pregunta, "usuario");
+    agregarMensaje("🤖 Jhulmar está pensando...", "sistema");
+    input.value = "";
+
+    const data = {
+      contents: [{ parts: [{ text: pregunta }] }]
+    };
+
+    try {
+      const res = await fetch(URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+      // Eliminar el mensaje "pensando..."
+      chat.removeChild(chat.lastChild);
+
+      if (res.ok && result.candidates) {
+        const respuesta = result.candidates[0].content.parts[0].text.trim();
+        agregarMensaje("🤖 Jhulmar: " + respuesta, "gemini");
+      } else {
+        agregarMensaje("❌ Error: " + (result.error?.message || "Error desconocido"), "sistema");
+      }
+    } catch (e) {
+      chat.removeChild(chat.lastChild);
+      agregarMensaje("⚠️ Error de conexión: " + e.message, "sistema");
+    }
+  }
+
+  btn.addEventListener('click', enviarMensaje);
+  input.addEventListener('keypress', e => {
+    if (e.key === 'Enter') enviarMensaje();
+  });
+</script>
+
+</body>
+</html>
